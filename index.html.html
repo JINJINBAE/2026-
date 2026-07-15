@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>농지보전부 농지전용 시스템</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+      background-color: #f5f3f0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* 비밀번호 모달 */
+    .password-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(45, 90, 61, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .password-modal.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .password-box {
+      background: white;
+      padding: 48px 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 360px;
+      width: 90%;
+    }
+
+    .password-icon {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+
+    .password-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2c2c2c;
+      margin-bottom: 8px;
+    }
+
+    .password-description {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      letter-spacing: 0.15em;
+      border: 2px solid #e5e3df;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: #2d5a3d;
+      box-shadow: 0 0 0 3px rgba(45, 90, 61, 0.1);
+    }
+
+    .password-error {
+      font-size: 12px;
+      color: #d97757;
+      margin-bottom: 20px;
+      min-height: 16px;
+    }
+
+    .password-button {
+      width: 100%;
+      padding: 12px 16px;
+      background-color: #2d5a3d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .password-button:hover {
+      background-color: #1f3f29;
+    }
+
+    /* 헤더 */
+    header {
+      background: linear-gradient(135deg, #2d5a3d 0%, #3a6d4a 100%);
+      color: white;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      flex-shrink: 0;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 0;
+    }
+
+    .header-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .header-left h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      letter-spacing: -0.5px;
+    }
+
+    .header-left p {
+      font-size: 12px;
+      opacity: 0.9;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .header-right {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .register-btn {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      margin-right: 0;
+      align-self: flex-start;
+    }
+
+    .register-btn:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* 메인 콘텐츠 */
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    /* 좌측 지도 */
+    .map-section {
+      flex: 0 0 65%;
+      background-color: #fff;
+      border-right: 1px solid #e5e3df;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .map-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 20px;
+      background-color: #fff;
+      border-bottom: 1px solid #e5e3df;
+      flex-shrink: 0;
+    }
+
+    .map-tab {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 13px;
+      font-weight: 600;
+      color: #999;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .map-tab.active {
+      color: #2d5a3d;
+      border-bottom-color: #2d5a3d;
+    }
+
+    .map-view, .stats-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .map-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f9f7f4 0%, #faf9f7 100%);
+    }
+
+    .map-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      font-size: 13px;
+      z-index: 100;
+    }
+
+    .legend-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #2c2c2c;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* 통계 패널 */
+    .stats-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .stats-section {
+      margin-bottom: 28px;
+    }
+
+    .stats-section h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2c2c2c;
+      margin-bottom: 12px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stats-card {
+      background: linear-gradient(135deg, #f9f7f4 0%, #faf8f6 100%);
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #e5e3df;
+      text-align: center;
+    }
+
+    .stats-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2d5a3d;
+      margin-bottom: 8px;
+    }
+
+    .stats-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #e5e3df;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .stats-table th {
+      background-color: #2d5a3d;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .stats-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e3df;
+    }
+
+    .stats-table tr:hover {
+      background-color: #f9f7f4;
+    }
+
+    /* 우측 패널 */
+    .info-section {
+      flex: 0 0 35%;
+      background-color: #fafaf8;
+      border-left: 1px solid #e5e3df;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-panel {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      background-color: #fff;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 20px;
+      border-bottom: 1px solid #e5e3df;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .case-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2c2c2c;
+      margin-bottom: 8px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      color: #999;
+      flex-shrink: 0;
+    }
+
+    .form-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      min-height: 0;
+    }
+
+    .form-section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #666;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2c2c2c;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #e5e3df;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #333;
+    }
+
+    .form-group textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+
+    .empty-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2c2c2c;
+      margin-bottom: 8px;
+    }
+
+    /* 모달 */
+    .register-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+    }
+
+    .register-modal.hidden {
+      display: none;
+    }
+
+    .register-box {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .register-header {
+      padding: 24px;
+      border-bottom: 1px solid #e5e3df;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .register-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #2c2c2c;
+    }
+
+    .register-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .register-content {
+      padding: 24px;
+      flex: 1;
+    }
+
+    .register-form-group {
+      margin-bottom: 20px;
+    }
+
+    .register-form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #2c2c2c;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .register-input,
+    .register-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e5e3df;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #333;
+    }
+
+    .register-textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .address-search-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .address-search-group input {
+      flex: 1;
+    }
+
+    .search-btn {
+      padding: 10px 16px;
+      background-color: #2d5a3d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .search-result {
+      font-size: 12px;
+      color: #4a7c59;
+      margin-top: 6px;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .radio-item input[type="radio"] {
+      cursor: pointer;
+      accent-color: #2d5a3d;
+    }
+
+    .radio-item label {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .file-upload-label {
+      display: block;
+      padding: 16px;
+      border: 2px dashed #e5e3df;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: #faf8f7;
+    }
+
+    .file-upload-label:hover {
+      border-color: #2d5a3d;
+      background-color: #f5f3f0;
+    }
+
+    .file-upload-label.has-file {
+      border-color: #4a7c59;
+      background-color: #f0f5f2;
+    }
+
+    .file-upload-text {
+      font-size: 13px;
+      color: #666;
+      margin: 0;
+    }
+
+    .file-upload-file {
+      font-size: 12px;
+      color: #4a7c59;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .register-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #e5e3df;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .register-submit {
+      flex: 1;
+      padding: 12px 16px;
+      background-color: #d97757;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .register-cancel {
+      padding: 12px 16px;
+      background-color: #f0f0f0;
+      color: #666;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .photo-info {
+      font-size: 13px;
+      color: #999;
+      padding: 10px;
+      background-color: #f9f8f7;
+      border-radius: 4px;
+      border: 1px solid #e5e3df;
+    }
+
+    .download-btn {
+      display: inline-block;
+      padding: 10px 16px;
+      background-color: #d97757;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 비밀번호 모달 -->
+  <div id="password-modal" class="password-modal">
+    <div class="password-box">
+      <div class="password-icon">🔐</div>
+      <h2 class="password-title">접근 권한 확인</h2>
+      <p class="password-description">농지보전부 농지전용 시스템<br>접근을 위해 코드를 입력해주세요</p>
+      <input type="password" id="password-input" class="password-input" placeholder="••••" maxlength="6" autocomplete="off">
+      <div class="password-error" id="password-error"></div>
+      <button class="password-button" onclick="checkPassword()">확인</button>
+    </div>
+  </div>
+
+  <!-- 신규 등록 모달 -->
+  <div id="register-modal" class="register-modal hidden">
+    <div class="register-box">
+      <div class="register-header">
+        <h2>신규 안건 등록</h2>
+        <button class="register-close" onclick="closeRegisterModal()">✕</button>
+      </div>
+      <div class="register-content">
+        <div class="register-form-group">
+          <label>안건 유형</label>
+          <div class="radio-group">
+            <div class="radio-item">
+              <input type="radio" id="type-conversion" name="reg-type" value="conversion" checked>
+              <label for="type-conversion">농지전용</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="type-cooperation" name="reg-type" value="cooperation">
+              <label for="type-cooperation">분야협의</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="type-committee" name="reg-type" value="committee">
+              <label for="type-committee">농지관리위원회</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="register-form-group">
+          <label>주소 검색</label>
+          <div class="address-search-group">
+            <input type="text" id="search-address" class="register-input" placeholder="시/도 시/군/구 동/읍 입력">
+            <button class="search-btn" onclick="searchAddress()">검색</button>
+          </div>
+          <div class="search-result" id="search-result"></div>
+        </div>
+
+        <div class="register-form-group">
+          <label>사업시행자</label>
+          <input type="text" id="reg-applicant" class="register-input" placeholder="회사명 또는 개인명">
+        </div>
+
+        <div class="register-form-group">
+          <label>사업내용</label>
+          <textarea id="reg-business" class="register-textarea" placeholder="사업의 목적 및 주요 내용을 기입하세요"></textarea>
+        </div>
+
+        <div class="register-form-group">
+          <label>시설관리자 협의내용</label>
+          <textarea id="reg-facility-opinion" class="register-textarea" placeholder="농업생산기반시설 관리자의 협의 의견"></textarea>
+        </div>
+
+        <div class="register-form-group">
+          <label>농지보전부 의견</label>
+          <textarea id="reg-our-opinion" class="register-textarea" placeholder="농지보전부의 초기 검토 의견"></textarea>
+        </div>
+
+        <div class="register-form-group">
+          <label>농식품부 의견</label>
+          <textarea id="reg-ministry-opinion" class="register-textarea" placeholder="농식품부 농지관리위원회의 의견"></textarea>
+        </div>
+
+        <div class="register-form-group">
+          <label>검토 상태</label>
+          <div class="radio-group">
+            <div class="radio-item">
+              <input type="radio" id="status-reviewing" name="reg-status" value="reviewing" checked>
+              <label for="status-reviewing">검토중</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="status-inprogress" name="reg-status" value="inprogress">
+              <label for="status-inprogress">진행중</label>
+            </div>
+            <div class="radio-item">
+              <input type="radio" id="status-completed" name="reg-status" value="completed">
+              <label for="status-completed">완료</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="register-form-group">
+          <label>사진 첨부</label>
+          <input type="file" id="reg-photo" accept="image/*" onchange="handleFileSelect()" style="display: none;">
+          <label for="reg-photo" class="file-upload-label" id="file-upload-label">
+            <p class="file-upload-text">📷 사진을 클릭하거나 드래그하여 첨부하세요</p>
+            <p class="file-upload-file" id="file-name"></p>
+          </label>
+        </div>
+      </div>
+      <div class="register-footer">
+        <button class="register-cancel" onclick="closeRegisterModal()">취소</button>
+        <button class="register-submit" onclick="submitRegisterForm()">등록</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 헤더 -->
+    <header>
+      <div class="header-content">
+        <div class="header-left">
+          <h1>🗺️ 농지보전부 농지전용 시스템</h1>
+          <p>농지전용•협의 안건 현황판</p>
+        </div>
+        <div class="header-right">
+          <button class="register-btn" onclick="openRegisterModal()">+ 신규 안건 등록</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="main-content">
+      <!-- 좌측 지도 -->
+      <div class="map-section">
+        <div class="map-tabs">
+          <button class="map-tab active" onclick="switchTab('map')">현황판</button>
+          <button class="map-tab" onclick="switchTab('stats')">통계자료</button>
+        </div>
+
+        <div id="map-view" class="map-view">
+          <div class="map-container">
+            <svg viewBox="0 0 800 600">
+              <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e8e6e1" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect width="800" height="600" fill="#f5f3f0"/>
+              <rect width="800" height="600" fill="url(#grid)" opacity="0.3"/>
+              <g opacity="0.15">
+                <circle cx="250" cy="200" r="100" fill="#2d5a3d"/>
+                <circle cx="400" cy="350" r="80" fill="#2d5a3d"/>
+                <circle cx="550" cy="150" r="70" fill="#2d5a3d"/>
+              </g>
+              <text x="280" y="320" font-size="14" fill="#888">나주</text>
+              <text x="420" y="370" font-size="14" fill="#888">담양</text>
+              <text x="410" y="280" font-size="14" fill="#888">광주</text>
+              <text x="380" y="200" font-size="14" fill="#888">전주</text>
+              <text x="580" y="250" font-size="14" fill="#888">여수</text>
+              <g id="markers"></g>
+            </svg>
+            <div class="legend">
+              <div class="legend-title">진행 현황</div>
+              <div class="legend-item"><div class="legend-dot" style="background-color: #e8a87c;"></div><span>검토중</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background-color: #4a7c59;"></div><span>진행중</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background-color: #7b6b6b;"></div><span>완료</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="stats-view" class="stats-view" style="display: none;">
+          <div class="stats-container">
+            <div class="stats-section">
+              <h3>📊 전체 현황</h3>
+              <div class="stats-grid">
+                <div class="stats-card"><div class="stats-number" id="total-count">0</div><div class="stats-label">전체 안건</div></div>
+                <div class="stats-card"><div class="stats-number" id="reviewing-count">0</div><div class="stats-label">검토중</div></div>
+                <div class="stats-card"><div class="stats-number" id="completed-count">0</div><div class="stats-label">완료</div></div>
+              </div>
+            </div>
+
+            <div class="stats-section">
+              <h3>📈 상태별 현황</h3>
+              <table class="stats-table">
+                <thead><tr><th>상태</th><th>건수</th><th>비율</th></tr></thead>
+                <tbody id="status-table-body"></tbody>
+              </table>
+            </div>
+
+            <div class="stats-section">
+              <h3>📋 안건 유형별 현황</h3>
+              <table class="stats-table">
+                <thead><tr><th>안건 유형</th><th>건수</th><th>비율</th></tr></thead>
+                <tbody id="type-table-body"></tbody>
+              </table>
+            </div>
+
+            <div class="stats-section">
+              <h3>🗺️ 지역별 현황</h3>
+              <table class="stats-table">
+                <thead><tr><th>지역</th><th>건수</th><th>주요 사업</th></tr></thead>
+                <tbody id="region-table-body"></tbody>
+              </table>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e3df;">
+              <button class="download-btn" onclick="downloadStats()">📥 통계자료 다운로드 (CSV)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측 정보 패널 -->
+      <div class="info-section">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon">📍</div>
+          <p class="empty-text">지도에서 안건을 선택하세요</p>
+        </div>
+
+        <div id="detail-panel" class="detail-panel" style="display: none;">
+          <div class="panel-header">
+            <div>
+              <div class="case-name" id="case-title"></div>
+              <span class="status-badge" id="status-badge"></span>
+            </div>
+            <button class="close-btn" onclick="closePanel()">✕</button>
+          </div>
+          <div class="form-area">
+            <div class="form-section">
+              <span class="section-title">기본정보</span>
+              <div class="form-group">
+                <label>안건 유형</label>
+                <input type="text" id="case-type" readonly>
+              </div>
+              <div class="form-group">
+                <label>주소</label>
+                <input type="text" id="address" readonly>
+              </div>
+              <div class="form-group">
+                <label>사업시행자</label>
+                <input type="text" id="applicant" readonly>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <span class="section-title">첨부 자료</span>
+              <div class="photo-info" id="photo-info">첨부된 사진이 없습니다</div>
+            </div>
+
+            <div class="form-section">
+              <span class="section-title">진행현황</span>
+              <div class="form-group">
+                <label>추진경위</label>
+                <textarea id="progress" placeholder="사업 진행 상황을 기입하세요"></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <span class="section-title">사업내용</span>
+              <div class="form-group">
+                <label>사업 개요</label>
+                <textarea id="business" placeholder="사업의 목적 및 주요 내용을 기입하세요"></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <span class="section-title">주요쟁점</span>
+              <div class="form-group">
+                <label>주요쟁점사항</label>
+                <textarea id="main-issues" placeholder="검토 시 주요 쟁점 사항을 기입하세요"></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <span class="section-title">검토의견</span>
+              <div class="form-group">
+                <label>농지보전부 의견</label>
+                <textarea id="our-opinion" placeholder="농지보전부의 검토 의견을 기입하세요"></textarea>
+              </div>
+              <div class="form-group">
+                <label>농식품부 의견</label>
+                <textarea id="ministry-opinion" placeholder="농식품부 검토의견을 기입하세요"></textarea>
+              </div>
+              <div class="form-group">
+                <label>시설관리자 의견</label>
+                <textarea id="facilities-opinion" placeholder="시설관리자 협의의견을 기입하세요"></textarea>
+              </div>
+            </div>
+
+            <div style="padding-top: 16px; border-top: 1px solid #e5e3df; margin-top: 16px;">
+              <button style="width: 100%; padding: 12px 16px; background-color: #d97757; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer;" onclick="saveData()">저장</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CORRECT_PASSWORD = '6181';
+    let isAuthenticated = false;
+    let selectedFile = null;
+    let currentSearchCoords = null;
+    let selectedCaseId = null;
+
+    const cases = [
+      { id: 1, name: '나주시 동신면 태양광시설', lat: 280, lng: 180, status: 'reviewing', type: 'committee', address: '전남 나주시 동신면 중거리 123', applicant: 'OO에너지', progress: '농지관리위원회 검토 단계', mainIssues: '우량농지 침해 가능성', ministryOpinion: '조건부 승인', facilitiesOpinion: '농업생산기반정비사업 구간과 중첩', business: '', ourOpinion: '' },
+      { id: 2, name: '전주시 완산구 주택단지 개발', lat: 195, lng: 380, status: 'inprogress', type: 'conversion', address: '전북 전주시 완산구 평화동 456', applicant: 'XX건설', progress: '기본계획 단계', mainIssues: '농지 규모 광대', ministryOpinion: '검토중', facilitiesOpinion: '관개로 인접', business: '', ourOpinion: '' },
+      { id: 3, name: '광주시 북구 공공주택 조성', lat: 280, lng: 410, status: 'completed', type: 'conversion', address: '광주 북구 신안동 789', applicant: '광주시청', progress: '승인 완료', mainIssues: '공공성 높음', ministryOpinion: '승인', facilitiesOpinion: '관개영향 최소', business: '', ourOpinion: '' }
+    ];
+
+    const statusColors = { reviewing: '#e8a87c', inprogress: '#4a7c59', completed: '#7b6b6b' };
+    const statusLabels = { reviewing: '검토중', inprogress: '진행중', completed: '완료' };
+    const typeLabels = { conversion: '농지전용', cooperation: '분야협의', committee: '농지관리위원회' };
+    const addressDatabase = [
+      { full: '전남 나주시 동신면 중거리', lat: 280, lng: 180, display: '나주시 동신면' },
+      { full: '전북 전주시 완산구 평화동', lat: 195, lng: 380, display: '전주시 완산구' },
+      { full: '광주 북구 신안동', lat: 280, lng: 410, display: '광주시 북구' }
+    ];
+
+    function checkPassword() {
+      const input = document.getElementById('password-input');
+      const errorMsg = document.getElementById('password-error');
+      if (input.value === CORRECT_PASSWORD) {
+        isAuthenticated = true;
+        document.getElementById('password-modal').style.display = 'none';
+      } else {
+        errorMsg.textContent = '코드가 일치하지 않습니다';
+        input.value = '';
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.map-tab').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('map-view').style.display = tab === 'map' ? 'flex' : 'none';
+      document.getElementById('stats-view').style.display = tab === 'stats' ? 'flex' : 'none';
+      if (tab === 'stats') updateStats();
+    }
+
+    function updateStats() {
+      const total = cases.length;
+      const reviewing = cases.filter(c => c.status === 'reviewing').length;
+      const completed = cases.filter(c => c.status === 'completed').length;
+      document.getElementById('total-count').textContent = total;
+      document.getElementById('reviewing-count').textContent = reviewing;
+      document.getElementById('completed-count').textContent = completed;
+
+      const statusTableBody = document.getElementById('status-table-body');
+      statusTableBody.innerHTML = '';
+      [{ label: '검토중', count: reviewing }, { label: '진행중', count: cases.filter(c => c.status === 'inprogress').length }, { label: '완료', count: completed }].forEach(s => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${s.label}</td><td>${s.count}</td><td>${(s.count/total*100).toFixed(1)}%</td>`;
+        statusTableBody.appendChild(row);
+      });
+
+      const typeTableBody = document.getElementById('type-table-body');
+      typeTableBody.innerHTML = '';
+      [{ label: '농지전용', count: cases.filter(c => c.type === 'conversion').length }, { label: '분야협의', count: cases.filter(c => c.type === 'cooperation').length }, { label: '농지관리위원회', count: cases.filter(c => c.type === 'committee').length }].forEach(t => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${t.label}</td><td>${t.count}</td><td>${(t.count/total*100).toFixed(1)}%</td>`;
+        typeTableBody.appendChild(row);
+      });
+    }
+
+    function renderMarkers() {
+      const markersGroup = document.getElementById('markers');
+      markersGroup.innerHTML = '';
+      cases.forEach(caseItem => {
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.style.cursor = 'pointer';
+        group.onclick = () => selectCase(caseItem.id);
+        
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', caseItem.lng);
+        circle.setAttribute('cy', caseItem.lat);
+        circle.setAttribute('r', '14');
+        circle.setAttribute('fill', statusColors[caseItem.status]);
+        
+        const border = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        border.setAttribute('cx', caseItem.lng);
+        border.setAttribute('cy', caseItem.lat);
+        border.setAttribute('r', '14');
+        border.setAttribute('fill', 'none');
+        border.setAttribute('stroke', '#fff');
+        border.setAttribute('stroke-width', '3');
+        
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', caseItem.lng);
+        text.setAttribute('y', caseItem.lat + 5);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('font-size', '12');
+        text.setAttribute('font-weight', 'bold');
+        text.setAttribute('fill', '#fff');
+        text.textContent = caseItem.id;
+        
+        group.appendChild(circle);
+        group.appendChild(border);
+        group.appendChild(text);
+        markersGroup.appendChild(group);
+      });
+    }
+
+    function selectCase(caseId) {
+      selectedCaseId = caseId;
+      const caseItem = cases.find(c => c.id === caseId);
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('detail-panel').style.display = 'flex';
+      document.getElementById('case-title').textContent = caseItem.name;
+      const badge = document.getElementById('status-badge');
+      badge.textContent = statusLabels[caseItem.status];
+      badge.style.backgroundColor = statusColors[caseItem.status];
+      document.getElementById('case-type').value = typeLabels[caseItem.type] || '미지정';
+      document.getElementById('address').value = caseItem.address;
+      document.getElementById('applicant').value = caseItem.applicant;
+      document.getElementById('progress').value = caseItem.progress || '';
+      document.getElementById('business').value = caseItem.business || '';
+      document.getElementById('main-issues').value = caseItem.mainIssues || '';
+      document.getElementById('our-opinion').value = caseItem.ourOpinion || '';
+      document.getElementById('ministry-opinion').value = caseItem.ministryOpinion || '';
+      document.getElementById('facilities-opinion').value = caseItem.facilitiesOpinion || '';
+      
+      const photoInfo = document.getElementById('photo-info');
+      if (caseItem.photo) {
+        photoInfo.innerHTML = `📷 ${caseItem.photo.name} (${caseItem.photo.size})`;
+      } else {
+        photoInfo.textContent = '첨부된 사진이 없습니다';
+      }
+    }
+
+    function closePanel() {
+      selectedCaseId = null;
+      document.getElementById('empty-state').style.display = 'flex';
+      document.getElementById('detail-panel').style.display = 'none';
+    }
+
+    function saveData() {
+      if (selectedCaseId) {
+        const caseItem = cases.find(c => c.id === selectedCaseId);
+        caseItem.progress = document.getElementById('progress').value;
+        caseItem.business = document.getElementById('business').value;
+        caseItem.mainIssues = document.getElementById('main-issues').value;
+        caseItem.ourOpinion = document.getElementById('our-opinion').value;
+        caseItem.ministryOpinion = document.getElementById('ministry-opinion').value;
+        caseItem.facilitiesOpinion = document.getElementById('facilities-opinion').value;
+        alert('✓ 저장되었습니다');
+      }
+    }
+
+    function searchAddress() {
+      const searchInput = document.getElementById('search-address').value.trim();
+      const resultDiv = document.getElementById('search-result');
+      if (!searchInput) {
+        resultDiv.textContent = '주소를 입력해주세요';
+        resultDiv.style.color = '#d97757';
+        return;
+      }
+      const found = addressDatabase.find(addr => addr.full.includes(searchInput) || addr.display.includes(searchInput));
+      if (found) {
+        currentSearchCoords = { lat: found.lat, lng: found.lng };
+        resultDiv.textContent = `✓ 위치 확인됨: ${found.display}`;
+        resultDiv.style.color = '#4a7c59';
+      } else {
+        currentSearchCoords = { lat: 200 + Math.random() * 300, lng: 200 + Math.random() * 300 };
+        resultDiv.textContent = `✓ 새로운 위치로 등록됩니다`;
+        resultDiv.style.color = '#4a7c59';
+      }
+    }
+
+    function handleFileSelect() {
+      const fileInput = document.getElementById('reg-photo');
+      const fileName = document.getElementById('file-name');
+      const uploadLabel = document.getElementById('file-upload-label');
+      if (fileInput.files && fileInput.files[0]) {
+        selectedFile = fileInput.files[0];
+        fileName.textContent = '✓ ' + selectedFile.name;
+        uploadLabel.classList.add('has-file');
+      } else {
+        selectedFile = null;
+        fileName.textContent = '';
+        uploadLabel.classList.remove('has-file');
+      }
+    }
+
+    function openRegisterModal() {
+      document.getElementById('register-modal').classList.remove('hidden');
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('register-modal').classList.add('hidden');
+      document.getElementById('search-address').value = '';
+      document.getElementById('reg-applicant').value = '';
+      document.getElementById('reg-business').value = '';
+      document.getElementById('reg-facility-opinion').value = '';
+      document.getElementById('reg-our-opinion').value = '';
+      document.getElementById('reg-ministry-opinion').value = '';
+      document.getElementById('type-conversion').checked = true;
+      document.getElementById('status-reviewing').checked = true;
+      document.getElementById('search-result').textContent = '';
+      document.getElementById('reg-photo').value = '';
+      document.getElementById('file-name').textContent = '';
+      selectedFile = null;
+      currentSearchCoords = null;
+    }
+
+    function submitRegisterForm() {
+      const address = document.getElementById('search-address').value.trim();
+      const applicant = document.getElementById('reg-applicant').value.trim();
+      if (!address || !applicant || !currentSearchCoords) {
+        alert('주소(검색 완료)와 사업시행자는 필수입니다');
+        return;
+      }
+      const type = document.querySelector('input[name="reg-type"]:checked').value;
+      const status = document.querySelector('input[name="reg-status"]:checked').value;
+      const newCase = {
+        id: cases.length + 1,
+        name: applicant + ' - ' + address,
+        lat: currentSearchCoords.lat,
+        lng: currentSearchCoords.lng,
+        status: status,
+        type: type,
+        address: address,
+        applicant: applicant,
+        progress: '신규 등록됨',
+        mainIssues: '',
+        ministryOpinion: document.getElementById('reg-ministry-opinion').value,
+        facilitiesOpinion: document.getElementById('reg-facility-opinion').value,
+        business: document.getElementById('reg-business').value,
+        ourOpinion: document.getElementById('reg-our-opinion').value,
+        photo: selectedFile ? { name: selectedFile.name, size: (selectedFile.size / 1024).toFixed(2) + ' KB', type: selectedFile.type } : null
+      };
+      cases.push(newCase);
+      renderMarkers();
+      selectCase(newCase.id);
+      closeRegisterModal();
+      alert('✓ 새로운 안건이 등록되었습니다');
+    }
+
+    function downloadStats() {
+      let csv = 'ID,안건명,주소,사업시행자,안건유형,상태\n';
+      cases.forEach(caseItem => {
+        const type = typeLabels[caseItem.type] || '미지정';
+        csv += `${caseItem.id},"${caseItem.name}","${caseItem.address}","${caseItem.applicant}","${type}","${statusLabels[caseItem.status]}"\n`;
+      });
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+      element.setAttribute('download', '농지전용_안건_' + new Date().toISOString().split('T')[0] + '.csv');
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      alert('✓ 통계자료가 다운로드되었습니다');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordInput = document.getElementById('password-input');
+      if (passwordInput) {
+        passwordInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') checkPassword();
+        });
+        passwordInput.focus();
+      }
+
+      const searchInput = document.getElementById('search-address');
+      if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') searchAddress();
+        });
+      }
+
+      const fileUploadLabel = document.getElementById('file-upload-label');
+      const fileInput = document.getElementById('reg-photo');
+      if (fileUploadLabel) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          fileUploadLabel.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); });
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+          fileUploadLabel.addEventListener(eventName, () => { fileUploadLabel.style.borderColor = '#2d5a3d'; fileUploadLabel.style.backgroundColor = '#f0f5f2'; });
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+          fileUploadLabel.addEventListener(eventName, () => { fileUploadLabel.style.borderColor = '#e5e3df'; fileUploadLabel.style.backgroundColor = '#faf8f7'; });
+        });
+        fileUploadLabel.addEventListener('drop', e => {
+          const files = e.dataTransfer.files;
+          if (files.length > 0 && files[0].type.startsWith('image/')) {
+            fileInput.files = files;
+            handleFileSelect();
+          }
+        });
+      }
+    });
+
+    renderMarkers();
+  </script>
+</body>
+</html>
